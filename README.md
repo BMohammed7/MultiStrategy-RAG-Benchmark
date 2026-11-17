@@ -4,7 +4,7 @@ A containerized full-stack benchmarking platform built to evaluate execution lat
 
 Designed to demonstrate the architectural trade-offs between sequential relational scans, inverted full-text indexes, TF-IDF vector cosine similarity, and hybrid Reciprocal Rank Fusion (RRF) inside a modular Python stack served by Gunicorn.
 
-![DB-Retrieval-Arena dashboard comparing four retrieval methods on a typo-filled query](dashboard-screenshot.png)
+![DB-Retrieval-Arena dashboard comparing four retrieval methods on a typo-filled query](dashboard-screenshot.png.png)
 
 ---
 
