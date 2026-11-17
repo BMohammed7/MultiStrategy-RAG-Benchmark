@@ -1,0 +1,5 @@
+﻿services:
+  retrieval-arena:
+    build: .
+    ports:
+      - "5001:5001"
