@@ -1,0 +1,91 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Strategy RAG & DB Retrieval Arena</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="bg-slate-950 text-slate-100 p-6 font-sans">
+    <div class="max-w-6xl mx-auto">
+        <header class="border-b border-slate-800 pb-4 mb-6 flex flex-wrap justify-between items-center gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-cyan-400">Database Retrieval Benchmark Arena</h1>
+                <p class="text-slate-400 text-sm">Real-Time Latency (ms) vs. Relevance Evaluation Across 4 Retrieval Architectures</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-xs bg-slate-900 border border-slate-700 px-3 py-1.5 rounded text-emerald-400 font-mono">Corpus: {{ total_rows }} Incident Logs</span>
+            </div>
+        </header>
+
+        <section class="mb-4">
+            <span class="text-xs text-slate-400 uppercase tracking-wider block mb-2">Preset Stress Tests:</span>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="runQuery('ERR-404-CAN')" class="preset-btn border-cyan-800 text-cyan-300">1. Exact Key: ERR-404-CAN</button>
+                <button onclick="runQuery('Why is my phone app lagging when scrolling pictures?')" class="preset-btn border-purple-800 text-purple-300">2. Semantic Query (No Exact Keywords)</button>
+                <button onclick="runQuery('container runs out of ram and crashes')" class="preset-btn border-emerald-800 text-emerald-300">3. Natural Language Incident</button>
+                <button onclick="runQuery('PyTrch CUDDA memoery crash')" class="preset-btn border-amber-800 text-amber-300">4. Severe Typos (3-Gram Test)</button>
+            </div>
+        </section>
+
+        <section class="flex gap-3 mb-6">
+            <input id="q" type="text" placeholder="Search 1,200 engineering logs by error code, symptom, or natural question..." class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-400" onkeydown="if(event.key==='Enter') runQuery()">
+            <button onclick="runQuery()" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-6 py-3 rounded-lg transition">Run Benchmark</button>
+        </section>
+
+        <section id="bot-box" class="hidden bg-slate-900/90 border border-emerald-700/60 p-4 rounded-xl mb-6">
+            <div class="text-xs font-bold text-emerald-400 uppercase mb-1" id="winner-banner"></div>
+            <p class="text-slate-200 text-sm font-mono" id="bot-answer"></p>
+        </section>
+
+        <main id="arena" class="grid grid-cols-1 md:grid-cols-2 gap-5"></main>
+    </div>
+
+    <script>
+        async function runQuery(preset) {
+            var input = document.getElementById('q');
+            if (preset) input.value = preset;
+            var query = input.value.trim();
+            if (!query) return;
+
+            var res = await fetch('/api/benchmark', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({query: query})
+            });
+            var data = await res.json();
+
+            var botBox = document.getElementById('bot-box');
+            botBox.classList.remove('hidden');
+            document.getElementById('winner-banner').innerText = 'Synthesized Output via ' + data.best_method + ' | Fastest Index: ' + data.fastest_method + ' (' + data.fastest_ms + ' ms)';
+            document.getElementById('bot-answer').innerText = data.chatbot_reply;
+
+            var arena = document.getElementById('arena');
+            arena.innerHTML = '';
+            data.methods.forEach(function(m) {
+                var top = m.results[0];
+                var badgeColor = m.is_fastest ? 'bg-amber-950 text-amber-300 border-amber-700' : 'bg-slate-800 text-slate-300 border-slate-700';
+                var bodyHtml = '';
+                if (top) {
+                    bodyHtml = '<div class="flex justify-between text-xs mb-1">' +
+                        '<span class="font-mono text-cyan-400 font-bold">' + top.code + ' (' + top.cat + ')</span>' +
+                        '<span class="text-emerald-400 font-bold">Relevance: ' + top.score + '%</span></div>' +
+                        '<div class="w-full bg-slate-800 h-1.5 rounded-full mb-3">' +
+                        '<div class="bg-emerald-500 h-full rounded-full" style="width: ' + top.score + '%"></div></div>' +
+                        '<p class="text-xs text-slate-300 leading-relaxed bg-slate-950 p-3 rounded border border-slate-800">' + top.content + '</p>';
+                } else {
+                    bodyHtml = '<p class="text-xs text-rose-400 italic py-4">0 Matches Retrieved</p>';
+                }
+                arena.innerHTML += '<div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">' +
+                    '<div><div class="flex justify-between items-start mb-2"><div>' +
+                    '<h3 class="font-bold text-base text-white">' + m.name + '</h3>' +
+                    '<p class="text-xs text-slate-400">' + m.desc + '</p></div>' +
+                    '<span class="text-xs px-2.5 py-1 rounded border font-mono ' + badgeColor + '">' + m.latency_ms + ' ms</span></div>' +
+                    '<div class="mt-4 pt-3 border-t border-slate-800/80">' + bodyHtml + '</div></div></div>';
+            });
+        }
+        runQuery('Why is my phone app lagging when scrolling pictures?');
+    </script>
+</body>
+</html>
